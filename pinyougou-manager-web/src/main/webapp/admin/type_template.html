@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- 页面meta -->
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>类型模板管理</title>
+  <!-- Tell the browser to be responsive to screen width -->
+  <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+  <link rel="stylesheet" href="../js/plugins/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../js/plugins/adminLTE/css/AdminLTE.css">
+  <link rel="stylesheet" href="../js/plugins/adminLTE/css/skins/_all-skins.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/plugins/jquery/jquery.min.js"></script>
+  <script src="../js/plugins/bootstrap/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="../js/plugins/select2/select2.css"/>
+  <link rel="stylesheet" href="../js/plugins/select2/select2-bootstrap.css"/>
+  <script type="text/javascript" src="../js/plugins/select2/select2.min.js"></script>
+  <!--angularJS组件-->
+  <script src="../js/plugins/angularjs/angular.min.js"></script>
+  <!--分页组件-->
+  <script src="../js/plugins/angularjs/pagination.js"></script>
+  <link rel="stylesheet" href="../js/plugins/angularjs/pagination.css"/>
+  <!--引用自定义js-->
+  <script type="text/javascript" src="../js/base_pagination.js"></script>
+  <!--下面这个js必须在base.js后面引用，因为它使用了app指令-->
+  <script type="text/javascript" src="../js/plugins/select2/angular-select2.js"></script>
+  <script type="text/javascript" src="../js/service/typeTemplateService.js"></script>
+  <script type="text/javascript" src="../js/service/brandService.js"></script>
+  <script type="text/javascript" src="../js/service/specificationService.js"></script>
+  <script type="text/javascript" src="../js/controller/baseController.js"></script>
+  <script type="text/javascript" src="../js/controller/typeTemplateController.js"></script>
+  <!--引用自定义样式-->
+  <link rel="stylesheet" href="../css/input.css">
+</head>
+
+<body class="hold-transition skin-red sidebar-mini" ng-app="pinyougou" ng-controller="typeTemplateController" ng-init="findBrandList();findSpecList()">
+<!-- .box-body -->
+<div class="box-header with-border">
+  <h3 class="box-title">商品类型模板管理</h3>
+</div>
+
+<div class="box-body">
+
+  <!-- 数据表格 -->
+  <div class="table-box">
+
+    <!--工具栏-->
+    <div class="pull-left">
+      <div class="form-group form-inline">
+        <div class="btn-group">
+          <button type="button" class="btn btn-default" title="新建" data-toggle="modal" data-target="#editModal" ng-click="init()">
+            <i class="fa fa-file-o"></i> 新建
+          </button>
+          <button type="button" class="btn btn-default" title="删除" data-toggle="modal" data-target="#myModal">
+            <i class="fa fa-trash-o"></i>删除
+          </button>
+          <button type="button" class="btn btn-default" title="刷新" ng-click="reloadList()">
+            <i class="fa fa-refresh"></i>刷新
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="box-tools pull-right">
+      <div class="has-feedback">
+        分类模板名称：<label>
+        <input ng-model="searchEntity.name"/>
+      </label>
+        <button class="btn btn-default" ng-click="reloadList()">查询</button>
+      </div>
+    </div>
+    <!--工具栏/-->
+
+    <!--数据列表-->
+    <table id="dataList" class="table table-bordered table-striped table-hover dataTable">
+      <thead>
+      <tr>
+        <th class="" style="padding-right:0">
+          <label for="selectAll">
+            <input id="selectAll" type="checkbox" class="icheckbox_square-blue" ng-model="select_all" ng-click="selectAll()">
+          </label>
+        </th>
+        <th class="sorting_asc">模板ID</th>
+        <th class="sorting">分类模板名称</th>
+        <th class="sorting">关联品牌</th>
+        <th class="sorting">关联规格</th>
+        <th class="sorting">扩展属性</th>
+        <th class="text-center">操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr ng-repeat="entity in list" ng-click="rowClick($event, entity.id)">
+        <td><label>
+          <input type="checkbox" ng-model="entity.checked" ng-click="updateSelection($event, entity.id)">
+        </label></td>
+        <td>{{entity.id}}</td>
+        <td>{{entity.name}}</td>
+        <td>{{jsonToString(entity.brandIds, "text")}}</td>
+        <td>{{jsonToString(entity.specIds, "text")}}</td>
+        <td>{{jsonToString(entity.customAttributeItems, "text")}}</td>
+        <td class="text-center">
+          <button type="button" class="btn bg-olive btn-xs" data-toggle="modal" data-target="#editModal" ng-click="findOne(entity.id)">修改</button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <!--数据列表/-->
+
+    <!--分页组件-->
+    <tm-pagination conf="paginationConf"></tm-pagination>
+  </div>
+  <!-- 数据表格 /-->
+
+
+</div>
+<!-- /.box-body -->
+
+
+<!-- 编辑窗口 -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">商品类型模板编辑</h3>
+      </div>
+      <div class="modal-body">
+        <table class="table table-bordered table-striped" width="800px">
+          <tr>
+            <td>商品类型</td>
+            <td><input class="form-control" placeholder="商品类型" ng-model="entity.name"></td>
+          </tr>
+          <tr>
+            <td>关联品牌</td>
+            <td>
+              <input select2 select2-model="entity.brandIds" config="brandList" multiple placeholder="选择品牌（可多选）" class="form-control">
+            </td>
+          </tr>
+          <tr>
+            <td>关联规格</td>
+            <td>
+              <input select2 select2-model="entity.specIds" config="specList" multiple placeholder="选择规格（可多选）" class="form-control">
+            </td>
+          </tr>
+          <tr>
+            <td>扩展属性</td>
+            <td>
+              <div class="btn-group">
+                <button type="button" class="btn btn-default" title="新增扩展属性" ng-click="addTableRow()">
+                  <i class="fa fa-file-o"></i>新增扩展属性
+                </button>
+              </div>
+              <table class="table table-bordered table-striped" width="800px">
+                <thead>
+                <tr>
+                  <td>属性名称</td>
+                  <td>操作</td>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="pojo in entity.customAttributeItems">
+                  <td><input class="form-control" placeholder="属性名称" ng-model="pojo.text"></td>
+                  <td>
+                    <button type="button" class="btn btn-default" title="删除" ng-click="deleteTableRow($index)">
+                      <i class="fa fa-trash-o"></i>删除
+                    </button>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" data-dismiss="modal" aria-hidden="true" ng-click="save()">保存</button>
+        <button class="btn btn-default" data-dismiss="modal" aria-hidden="true">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          &times;
+        </button>
+        <h4 class="modal-title" id="modalLabel">
+          删除模板
+        </h4>
+      </div>
+      <div class="modal-body">
+        您确认要删除勾选的数据吗？
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="delete()">确认</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal -->
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- 页面meta -->
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>商品分类管理</title>
+  <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+  <link rel="stylesheet" href="../js/plugins/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../js/plugins/adminLTE/css/AdminLTE.css">
+  <link rel="stylesheet" href="../js/plugins/adminLTE/css/skins/_all-skins.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+  <script src="../js/plugins/jquery/jquery.min.js"></script>
+  <script src="../js/plugins/bootstrap/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="../js/plugins/select2/select2.css"/>
+  <link rel="stylesheet" href="../js/plugins/select2/select2-bootstrap.css"/>
+  <script type="text/javascript" src="../js/plugins/select2/select2.min.js"></script>
+  <!--angularJS组件-->
+  <script src="../js/plugins/angularjs/angular.min.js"></script>
+  <!--引用自定义js-->
+  <script type="text/javascript" src="../js/base.js"></script>
+  <!--下面这个js必须在base.js后面引用，因为它使用了app指令-->
+  <script type="text/javascript" src="../js/plugins/select2/angular-select2.js"></script>
+  <script type="text/javascript" src="../js/service/itemCatService.js"></script>
+  <script type="text/javascript" src="../js/service/typeTemplateService.js"></script>
+  <script type="text/javascript" src="../js/controller/baseController.js"></script>
+  <script type="text/javascript" src="../js/controller/itemCatController.js"></script>
+
+</head>
+
+<body class="hold-transition skin-red sidebar-mini" ng-app="pinyougou" ng-controller="itemCatController"
+      ng-init="findByParentId(0); findTypeTemplateList()">
+<!-- .box-body -->
+
+<div class="box-header with-border">
+  <h3 class="box-title">商品分类管理
+  </h3>
+</div>
+
+<div class="box-body">
+  <ol class="breadcrumb">
+    <li>
+      <a href="#" ng-click="grade = 1; selectList({id : 0})">顶级分类列表</a>
+    </li>
+    <li>
+      <a href="#" ng-click="grade = 2; selectList(entity_1)">{{entity_1.name}}</a>
+    </li>
+    <li>
+      <a href="#" ng-click="grade = 3; selectList(entity_2)">{{entity_2.name}}</a>
+    </li>
+  </ol>
+
+  <!-- 数据表格 -->
+  <div class="table-box">
+
+    <!--工具栏-->
+    <div class="pull-left">
+      <div class="form-group form-inline">
+        <div class="btn-group">
+          <button type="button" class="btn btn-default" title="新建" data-toggle="modal" data-target="#editModal" ng-click="init()">
+            <i class="fa fa-file-o"></i> 新建
+          </button>
+          <button type="button" class="btn btn-default" title="删除" data-toggle="modal" data-target="#myModal">
+            <i class="fa fa-trash-o"></i> 删除
+          </button>
+          <button type="button" class="btn btn-default" title="刷新" ng-click="findByParentId(parentId)">
+            <i class="fa fa-check"></i> 刷新
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <!--数据列表-->
+    <table id="dataList" class="table table-bordered table-striped table-hover dataTable">
+      <thead>
+      <tr>
+      <tr>
+        <th class="" style="padding-right:0">
+          <label>
+            <input ng-model="select_all" ng-click="selectAll()" type="checkbox" class="icheckbox_square-blue"/>
+          </label>
+        </th>
+        <th class="sorting_asc">分类ID</th>
+        <th class="sorting">分类名称</th>
+        <th class="sorting">类型模板</th>
+        <th class="text-center">操作</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr ng-repeat="entity in list" ng-click="rowClick($event, entity.id)">
+        <td><label>
+          <input type="checkbox" ng-model="entity.checked" ng-click="updateSelection($event, entity.id)"/>
+        </label></td>
+        <td>{{entity.id}}</td>
+        <td>{{entity.name}}</td>
+        <td>{{entity.typeTemplateName}}</td>
+        <td class="text-center">
+          <span ng-if="grade < 3">
+            <button type="button" class="btn bg-olive btn-xs"
+                    ng-click="setGrade(grade + 1); selectList(entity)">查询下级</button>
+          </span>
+          <button type="button" class="btn bg-olive btn-xs" data-toggle="modal" data-target="#editModal"
+                  ng-click="findOne(entity.id)">修改
+          </button>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <!--数据列表/-->
+
+  </div>
+  <!-- 数据表格 /-->
+
+
+</div>
+<!-- /.box-body -->
+
+
+<!-- 编辑窗口 -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">商品分类编辑</h3>
+      </div>
+      <div class="modal-body">
+
+        <table class="table table-bordered table-striped" width="800px">
+          <tr>
+            <td>上级商品分类</td>
+            <td>
+              <span ng-if="entity_1.name == null">
+                无
+              </span>
+              <span ng-if="entity_1.name != null">
+                {{entity_1.name}}
+              </span>
+              <span ng-if="entity_2.name != null">
+                >> {{entity_2.name}}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td>商品分类名称</td>
+            <td><input class="form-control" placeholder="商品分类名称" ng-model="entity.name"></td>
+          </tr>
+          <tr>
+            <td>类型模板</td>
+            <td>
+              <input select2 select2-model="entity.typeTemplate" config="typeTemplateList" placeholder="商品类型模板"
+                     class="form-control"/>
+            </td>
+          </tr>
+        </table>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-success" data-dismiss="modal" aria-hidden="true" ng-click="save()">保存</button>
+        <button class="btn btn-default" data-dismiss="modal" aria-hidden="true">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          &times;
+        </button>
+        <h4 class="modal-title" id="modalLabel">
+          删除商品分类
+        </h4>
+      </div>
+      <div class="modal-body">
+        您确认要删除勾选的数据吗？
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="dele()">确认</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal -->
+
+</body>
+</html>
